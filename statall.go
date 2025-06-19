@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -21,6 +22,9 @@ func CheckErr(e error) {
 
 func main() {
 	c := color.New(color.FgCyan)
+	yellow := color.New(color.FgHiYellow)
+	red := color.New(color.FgHiRed)
+	bold := color.New(color.Bold)
 	// loop ueber repo-pfade:
 	infoLog.Println("looping ...")
 	matches, _ := filepath.Glob("*")
@@ -29,7 +33,7 @@ func main() {
 		f, _ := os.Stat(match)
 		if f.IsDir() {
 			// dirs = append(dirs, match)
-			c.Println("opening repo ", f.Name())
+			c.Println("opening repo: ", f.Name())
 			//infoLog.Println("opening repo ...")
 			r, err := git.PlainOpen(f.Name())
 			CheckErr(err)
@@ -37,20 +41,32 @@ func main() {
 			CheckErr(err)
 			//fmt.Println(remotes)
 
+			//checkout master?
+			// ... retrieving the branch being pointed by HEAD
+			ref, err := r.Head()
+			CheckErr(err)
+			bold.Println("Ref: ", ref.Name())
+
 			for i, remotename := range remotes {
-				c.Println(i, "", remotename)
-				/*
-					r.Fetch(&git.FetchOptions{
-						RemoteName: remotename.String(),
-					})
-				*/
+				fmt.Println(i, ":", remotename)
+				w, err := r.Worktree()
+				CheckErr(err)
+
+				state, _ := w.Status()
+				fmt.Print("Status: ")
+				red.Println(state)
+
+				fmt.Println("trying to pull ...")
+				err = w.Pull(&git.PullOptions{
+					RemoteName: remotename.Config().Name,
+				})
+				yellow.Println(err)
+				//CheckErr(err)
+				fmt.Println("")
+
 			}
 
 			// Get the working directory for the repository
-			w, err := r.Worktree()
-			CheckErr(err)
-			err = w.Pull(&git.PullOptions{RemoteName: "origin"})
-			CheckErr(err)
 
 		}
 	}
