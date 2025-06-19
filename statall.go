@@ -11,7 +11,6 @@ import (
 )
 
 var infoLog = log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
-var debugLog = log.New(os.Stdout, "DEBUG\t", log.Ldate|log.Ltime|log.Lshortfile)
 var errorLog = log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime)
 
 func CheckErr(e error) {
@@ -25,6 +24,8 @@ func main() {
 	yellow := color.New(color.FgHiYellow)
 	red := color.New(color.FgHiRed)
 	bold := color.New(color.Bold)
+	green := color.New(color.FgHiGreen)
+
 	// loop ueber repo-pfade:
 	infoLog.Println("looping ...")
 	matches, _ := filepath.Glob("*")
@@ -47,26 +48,44 @@ func main() {
 			CheckErr(err)
 			bold.Println("Ref: ", ref.Name())
 
+			// try for every remote:
 			for i, remotename := range remotes {
 				fmt.Println(i, ":", remotename)
+				// Get the working directory for the repository
 				w, err := r.Worktree()
 				CheckErr(err)
 
 				state, _ := w.Status()
 				fmt.Print("Status: ")
-				red.Println(state)
 
-				fmt.Println("trying to pull ...")
-				err = w.Pull(&git.PullOptions{
-					RemoteName: remotename.Config().Name,
-				})
-				yellow.Println(err)
-				//CheckErr(err)
-				fmt.Println("")
+				if state.IsClean() {
+					green.Print("clean")
+					fmt.Println("\ntrying to pull ...")
+					err = w.Pull(&git.PullOptions{
+						RemoteName: remotename.Config().Name,
+					})
+					if err == nil {
+						green.Println("Success!")
+					} else {
+						yellow.Println(err)
+					}
+					//CheckErr(err)
+					// Print the latest commit that was just pulled
+					ref, err := r.Head()
+					CheckErr(err)
+					commit, err := r.CommitObject(ref.Hash())
+					CheckErr(err)
+
+					bold.Println("--- Last commit: ---")
+					fmt.Println(commit)
+					fmt.Println("")
+				} else {
+					red.Print(state)
+					red.Println("(pull denied)")
+					fmt.Println("")
+				}
 
 			}
-
-			// Get the working directory for the repository
 
 		}
 	}
