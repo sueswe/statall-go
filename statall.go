@@ -67,7 +67,8 @@ func main() {
 					if err == nil {
 						green.Println("Success!")
 					} else {
-						yellow.Println(err)
+						yellow.Println("Ups: ", err)
+						yellow.Println("(please check manually if you need to.)")
 					}
 					//CheckErr(err)
 					// Print the latest commit that was just pulled
