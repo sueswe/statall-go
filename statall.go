@@ -22,6 +22,10 @@ func CheckErr(e error) {
 
 func main() {
 
+	if len(os.Args) <= 1 {
+		errorLog.Println("Missing branchname")
+		os.Exit(1)
+	}
 	branch := os.Args[1]
 
 	c := color.New(color.FgCyan)
