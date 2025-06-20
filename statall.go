@@ -8,6 +8,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/go-git/go-git/v6"
+	"github.com/go-git/go-git/v6/plumbing"
 )
 
 var infoLog = log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
@@ -20,6 +21,9 @@ func CheckErr(e error) {
 }
 
 func main() {
+
+	branch := os.Args[1]
+
 	c := color.New(color.FgCyan)
 	yellow := color.New(color.FgHiYellow)
 	red := color.New(color.FgHiRed)
@@ -55,6 +59,19 @@ func main() {
 				w, err := r.Worktree()
 				CheckErr(err)
 
+				// ... checking out branch
+				yellow.Println("git checkout ", branch)
+
+				branchRefName := plumbing.NewBranchReferenceName(branch)
+				branchCoOpts := git.CheckoutOptions{
+					Branch: plumbing.ReferenceName(branchRefName),
+					Force:  false,
+				}
+				if err := w.Checkout(&branchCoOpts); err != nil {
+					red.Println("checkout failed.", err)
+				} else {
+					green.Println("OK")
+				}
 				state, _ := w.Status()
 				fmt.Print("Status: ")
 
@@ -67,7 +84,7 @@ func main() {
 					if err == nil {
 						green.Println("Success!")
 					} else {
-						yellow.Println("Ups: ", err)
+						red.Println("Ups: ", err)
 						yellow.Println("(please check manually if you need to.)")
 					}
 					//CheckErr(err)
