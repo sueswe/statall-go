@@ -20,6 +20,12 @@ func CheckErr(e error) {
 	}
 }
 
+var cyan = color.New(color.FgCyan)
+var yellow = color.New(color.FgHiYellow)
+var red = color.New(color.FgHiRed)
+var bold = color.New(color.Bold)
+var green = color.New(color.FgHiGreen)
+
 func main() {
 
 	if len(os.Args) <= 1 {
@@ -28,44 +34,35 @@ func main() {
 	}
 	branch := os.Args[1]
 
-	c := color.New(color.FgCyan)
-	yellow := color.New(color.FgHiYellow)
-	red := color.New(color.FgHiRed)
-	bold := color.New(color.Bold)
-	green := color.New(color.FgHiGreen)
-
-	// loop ueber repo-pfade:
-	infoLog.Println("looping ...")
+	// loop over directories of current path:
+	infoLog.Println("getting directories ...")
 	matches, _ := filepath.Glob("*")
 	// var dirs []string
 	for _, match := range matches {
 		f, _ := os.Stat(match)
 		if f.IsDir() {
 			// dirs = append(dirs, match)
-			c.Println("opening repo: ", f.Name())
-			//infoLog.Println("opening repo ...")
+			cyan.Println("opening repo: ", f.Name())
 			r, err := git.PlainOpen(f.Name())
 			CheckErr(err)
 			remotes, err := r.Remotes()
 			CheckErr(err)
-			//fmt.Println(remotes)
 
-			//checkout master?
-			// ... retrieving the branch being pointed by HEAD
+			/* retrieving the branch being pointed by HEAD
 			ref, err := r.Head()
 			CheckErr(err)
-			bold.Println("Ref: ", ref.Name())
+			bold.Println("Ref: ", ref.Name()) */
 
-			// try for every remote:
+			// for every remote:
 			for i, remotename := range remotes {
-				fmt.Println(i, ":", remotename)
+				fmt.Println(i, ":", remotename.Config().URLs)
 				// Get the working directory for the repository
 				w, err := r.Worktree()
 				CheckErr(err)
+				fmt.Println("Worktree: ", w.Filesystem)
 
 				// ... checking out branch
 				yellow.Println("git checkout ", branch)
-
 				branchRefName := plumbing.NewBranchReferenceName(branch)
 				branchCoOpts := git.CheckoutOptions{
 					Branch: plumbing.ReferenceName(branchRefName),
@@ -76,6 +73,8 @@ func main() {
 				} else {
 					green.Println("OK")
 				}
+
+				// git status:
 				state, _ := w.Status()
 				fmt.Print("Status: ")
 
@@ -92,6 +91,7 @@ func main() {
 						yellow.Println("(please check manually if you need to.)")
 					}
 					//CheckErr(err)
+
 					// Print the latest commit that was just pulled
 					ref, err := r.Head()
 					CheckErr(err)
